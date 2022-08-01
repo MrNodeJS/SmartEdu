@@ -1,1 +1,3 @@
 "# SmartEdu" 
+
+patika.dev
