@@ -1,2 +1,3 @@
 "# SmartEdu" 
+
 patika.dev
