@@ -30,7 +30,7 @@ exports.loginUser  = async (req, res) => {
 					res.status(400).redirect('/login');
 				}
 			});
-		}else{
+		} else {
 			req.flash('error', "User is not exist!");
 			res.status(400).redirect('/login');
 		}
@@ -46,9 +46,11 @@ exports.getDashboardPage = async (req, res) => {
 	let user       = await User.findOne({_id: req.session.userID}).populate('courses');
 	let categories = await Category.find();
 	let courses    = await Course.find({user: req.session.userID});
+	let users      = await User.find();
 	res.status(200).render('dashboard', {
 		pageName: 'dashboard',
 		user,
+		users,
 		categories,
 		courses
 	});
@@ -58,4 +60,31 @@ exports.logoutUser = (req, res) => {
 	req.session.destroy(() => {
 		res.redirect('/');
 	});
+};
+
+exports.deleteUser = async (req, res) => {
+	try {
+		await User.findByIdAndRemove(req.params.id);
+		await Course.deleteMany({user: req.params.id});
+
+		res.status(200).redirect('/users/dashboard');
+	} catch (e) {
+		res.status(400).json({
+			status: 'error',
+			e,
+		});
+	}
+};
+exports.delete     = async (req, res) => {
+	try {
+		await User.findByIdAndRemove(req.params.id);
+		await Course.deleteMany({user: req.params.id});
+
+		res.status(200).redirect('/users/dashboard');
+	} catch (e) {
+		res.status(400).json({
+			status: 'error',
+			e,
+		});
+	}
 };
