@@ -20,65 +20,63 @@ exports.createCourse = async (req, res) => {
 
 exports.getAllCourses = async (req, res) => {
 	try {
-		let categorySlug = req.query.categories;
-		let query        = req.query.search;
 
-		let category = await Category.findOne({slug: categorySlug});
+		const categorySlug = req.query.categories;
+		const query        = req.query.search;
+
+		const category = await Category.findOne({slug: categorySlug});
 
 		let filter = {};
+
 		if (categorySlug) {
 			filter = {category: category._id};
 		}
+
 		if (query) {
 			filter = {name: query};
 		}
 
-
 		if (!query && !categorySlug) {
-			filter.name     = "";
-			filter.category = null;
+			filter.name = "",
+				filter.category = null;
 		}
-		let courses    = await Course.find({
+
+		const courses    = await Course.find({
 			$or: [
-				{
-					name: {$regex: '.*' + filter.name + '.*', $options: 'i'}
-				},
-				{
-					category: filter.category
-				}
+				{name: {$regex: '.*' + filter.name + '.*', $options: 'i'}},
+				{category: filter.category}
 			]
-		}).sort('-createAt');
-		let categories = await Category.find();
+		}).sort('-createdAt').populate('user');
+		const categories = await Category.find();
+
 		res.status(200).render('courses', {
 			courses,
 			categories,
-			pageName: "courses"
+			pageName: 'courses',
 		});
-	} catch (e) {
+	} catch (error) {
 		res.status(400).json({
-			status: 'Error',
-			e
+			status: 'fail',
+			error,
 		});
 	}
 };
 
 exports.getCourse = async (req, res) => {
 	try {
-		let course     = await Course.findOne({slug: req.params.slug});
-		let courseUser = await User.findById(course.user);
-		let user       = await User.findById(req.session.userID);
-		let categories = await Category.find();
+		const user       = await User.findById(req.session.userID);
+		const course     = await Course.findOne({slug: req.params.slug}).populate('user');
+		const categories = await Category.find();
 		res.status(200).render('course-single', {
 			course,
+			pageName: 'courses',
 			user,
-			courseUser,
-			categories,
-			pageName: "courses"
+			categories
 		});
-	} catch (e) {
+	} catch (error) {
 		res.status(400).json({
-			status: 'Error',
-			e
+			status: 'fail',
+			error,
 		});
 	}
 };
@@ -109,6 +107,37 @@ exports.releaseCourse = async (req, res) => {
 		res.status(400).json({
 			status: 'fail',
 			error,
+		});
+	}
+};
+
+exports.deleteCourse = async (req, res) => {
+	try {
+		const course = await Course.findOneAndRemove({slug: req.params.slug});
+		req.flash("error", `${course.name} has been removed successfully.`);
+		res.status(200).redirect('/users/dashboard');
+
+	} catch (e) {
+		res.status(400).json({
+			status: 'error',
+			e,
+		});
+	}
+};
+
+
+exports.updateCourse = async (req, res) => {
+	try {
+		const course       = await Course.findOne({slug: req.params.slug});
+		course.name        = req.body.name;
+		course.description = req.body.description;
+		course.category    = req.body.category;
+		course.save();
+		res.status(200).redirect('/users/dashboard');
+	} catch (e) {
+		res.status(400).json({
+			status: 'error',
+			e,
 		});
 	}
 };
